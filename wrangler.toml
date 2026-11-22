@@ -1,0 +1,36 @@
+name = "abuavi-bagels"
+main = "src/index.ts"
+compatibility_date = "2026-09-01"
+compatibility_flags = ["nodejs_compat"]
+
+# Builds the order page into web/dist before every deploy, so Cloudflare's
+# default deploy command (npx wrangler deploy) works with no extra settings.
+[build]
+command = "npm run build:web"
+
+[vars]
+TIMEZONE = "Asia/Jerusalem"
+PUBLIC_URL = "https://bagels.tylerpeller.com"
+# "1" loads two example drops with sample orders, once, into an empty shop.
+# Set to "0" (or delete it and the example drops in /admin) before real use.
+DEMO_SEED = "1"
+
+# One instance holds every drop and order and takes orders one at a time,
+# which is what makes the capacity cap race-proof.
+[[durable_objects.bindings]]
+name = "SHOP"
+class_name = "DropGatekeeper"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["DropGatekeeper"]
+
+[assets]
+directory = "./web/dist"
+binding = "ASSETS"
+not_found_handling = "single-page-application"
+
+# Secrets (dashboard > Settings > Variables and Secrets, or `wrangler secret put`):
+#   ADMIN_TOKEN     passcode for /admin
+#   RESEND_API_KEY  optional, enables confirmation emails
+#   EMAIL_FROM      optional, e.g. "Abu Avi Bagels <orders@yourdomain>"
